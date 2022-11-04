@@ -9,10 +9,13 @@ import (
 	"strings"
 )
 
-func ProcessEnvironmentFile(p string, envProcessed *map[string]string, doPrint bool) {
+// TODO:
+// Each variable found is added to or updated with the latest version in envProcessed.
+// If doPrint == true then detailed debugging information will be printed through the process of reading envData.
+func ProcessEnvironmentFile(envData string, envProcessed *map[string]string, doPrint bool) {
 	rVars := regexp.MustCompile(`\$\{?([\w-]+)\}?`)
 
-	fileEntries := ReadVariablesFromFile(p, doPrint)
+	fileEntries := ReadVariablesFromFile(envData, doPrint)
 
 	for _, entry := range fileEntries {
 		if doPrint {
@@ -63,12 +66,9 @@ func ProcessEnvironmentFile(p string, envProcessed *map[string]string, doPrint b
 	}
 }
 
-/**
-* Return:
-* string:	{varString} after expansion has been applied
-* bool:		Was the string fully expanded? Only true if all variables were known in {lookup}
-* []string:	Variables that weren't known.
- */
+// ExpandVarString replaces sections of varString that are formatted like environment variables with any matching entries in the given lookup.
+// Lookup's keys are expected to be the variable's name, the matching value is what the variable will be replaced with.
+// Returns the updated string, whether any replacements were made and an array of variable names that were in varString but don't have values provided in lookup.
 func ExpandVarString(varString string, lookup *map[string]string) (string, bool, []string) {
 	// rVars := regexp.MustCompile(`\$\{([\w-]+)\}|\$([\w-]+)`)
 	rVars := regexp.MustCompile(`\$\{([A-Za-z]{1}[A-Za-z0-9_-]+)\}|\$([A-Za-z]{1}[A-Za-z0-9_-]+)`)
@@ -94,6 +94,8 @@ func ExpandVarString(varString string, lookup *map[string]string) (string, bool,
 	return replaced, missCount == 0, neededKeys
 }
 
+// Cleans up a string that looks like an environment variable.
+// Mostly just removes any double-quotes (") from both sides.
 func CleanVarValue(varValue string) string {
 	return strings.TrimRight(strings.TrimLeft(varValue, `"`), `"`)
 }
@@ -102,6 +104,10 @@ func CleanVarValue(varValue string) string {
 // const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]?(?P<key>[A-Z]+[A-Z0-9-_]+)=(?P<value>(?:\"?(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*)\"?)|(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*))$`
 const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]*([A-Z][\w-]*)=((?:\"?(?:[^\r\n\$\"]*(?:\$\{?[A-Z][\w-]*\}?)*)+\"?)|(?:[\.\w\-:\/\\]*(?:\${[A-Z][\w-]*\})*)+){1}$`
 
+// Attempts to read in environment variable key/value pairs from envData.
+// path is the path to a file to read enviroment variables from. May be relative or absolute.
+// Returns an array of EnvVariable instances. Each representing a Key/value pair of a variable and its value that were found in the file at path.
+// If doPrint == true then detailed debugging information will be printed through the process of reading the file.
 func ReadVariablesFromFile(path string, doPrint bool) []EnvVariable {
 	envVars := []EnvVariable{}
 
@@ -144,6 +150,7 @@ func check(e error) {
 	}
 }
 
+// Simple Key/Value element for tracking Environment Variables
 type EnvVariable struct {
 	Name  string
 	Value string
