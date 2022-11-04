@@ -9,13 +9,14 @@ import (
 	"strings"
 )
 
-// TODO:
+// Reads in the file at the given path for all Environment variable declarations within.
 // Each variable found is added to or updated with the latest version in envProcessed.
+// Values that contain a known Environment variable will be expanded to contain the variable's value.
 // If doPrint == true then detailed debugging information will be printed through the process of reading envData.
-func ProcessEnvironmentFile(envData string, envProcessed *map[string]string, doPrint bool) {
+func ProcessEnvironmentFile(path string, envProcessed *map[string]string, doPrint bool) {
 	rVars := regexp.MustCompile(`\$\{?([\w-]+)\}?`)
 
-	fileEntries := ReadVariablesFromFile(envData, doPrint)
+	fileEntries := ReadVariablesFromFile(path, doPrint)
 
 	for _, entry := range fileEntries {
 		if doPrint {
