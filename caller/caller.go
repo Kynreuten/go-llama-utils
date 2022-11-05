@@ -1,3 +1,9 @@
+// #exec command
+// Executes a given process as though from a shell. Utilizes provided Environment Variables to transform the arguments for the target process.
+//
+// #read command
+// Reads in a source string and transforms Environment Variables that are found in it into their values from any provided Environment Files.
+
 package main
 
 import (
@@ -16,25 +22,82 @@ import (
 
 var _opts OperationOptions
 
+// func initOriginal() {
+// 	_opts = CreateDefaultOperationOptions()
+// 	//TODO: Consider subcommands using NewFlagSet if we want multiple approaches?
+// 	//https://gobyexample.com/command-line-subcommands
+// 	// Look at flagged options
+// 	flag.StringVar(&_opts.CommandPath, "cmd", "", "Command to execute. Must be a valid path. Can be relative or absolute.")
+// 	flag.Var(&_opts.CommandArgsRaw, "cmdArg", "Arguments for the command itself. You may supply multiple of these. Should include flag and value together with an equals sign between them. No equals if it has no value. \nEx 'loglevel=debug' or 'something=nope'")
+// 	//TODO: Add other flags for various settings on what we want reported or done
+// 	flag.BoolVar(&_opts.UseStdOut, "useStdOut", true, "True if you want Standard Output to be shown in this terminal")
+// 	flag.BoolVar(&_opts.UseStdErr, "useStdErr", true, "True if you want Standard Error to be shown in this terminal")
+// 	flag.BoolVar(&_opts.DoLogDebug, "debug.main", false, "True if you want most debug info displayed")
+// 	flag.BoolVar(&_opts.DoLogEnv, "debug.env", false, "True if you want to log all Environment data")
+// 	flag.BoolVar(&_opts.IsTest, "test", false, "True if you want to only show what would be done and exit")
+
+// 	flag.Parse()
+// 	_opts.Globs = flag.Args()
+// }
+
+const (
+	TYPE_EXEC = "exec"
+	TYPE_READ = "read"
+)
+
 func init() {
 	_opts = CreateDefaultOperationOptions()
-	//TODO: Consider subcommands using NewFlagSet if we want multiple approaches?
-	//https://gobyexample.com/command-line-subcommands
-	// Look at flagged options
-	flag.StringVar(&_opts.CommandPath, "cmd", "", "Command to execute. Must be a valid path. Can be relative or absolute.")
-	flag.Var(&_opts.CommandArgsRaw, "cmdArg", "Arguments for the command itself. You may supply multiple of these. Should include flag and value together with an equals sign between them. No equals if it has no value. \nEx 'loglevel=debug' or 'something=nope'")
-	//TODO: Add other flags for various settings on what we want reported or done
-	flag.BoolVar(&_opts.UseStdOut, "useStdOut", true, "True if you want Standard Output to be shown in this terminal")
-	flag.BoolVar(&_opts.UseStdErr, "useStdErr", true, "True if you want Standard Error to be shown in this terminal")
-	flag.BoolVar(&_opts.DoLogDebug, "debug.main", false, "True if you want most debug info displayed")
-	flag.BoolVar(&_opts.DoLogEnv, "debug.env", false, "True if you want to log all Environment data")
-	flag.BoolVar(&_opts.IsTest, "test", false, "True if you want to only show what would be done and exit")
 
-	flag.Parse()
-	_opts.Globs = flag.Args()
+	execFlags := flag.NewFlagSet(TYPE_EXEC, flag.ExitOnError)
+	execFlags.StringVar(&_opts.CommandPath, "cmd", "", "Command to execute. Must be a valid path. Can be relative or absolute.")
+	execFlags.Var(&_opts.CommandArgsRaw, "a", "Arguments for the command itself. You may supply multiple of these. Should include flag and value together with an equals sign between them. No equals if it has no value. \nEx 'loglevel=debug' or 'something=nope'")
+	addStandardOptions(execFlags)
+
+	readFlags := flag.NewFlagSet(TYPE_READ, flag.ExitOnError)
+	readFlags.StringVar(&_opts.TargetInPath, "i", "", "Path to the file to read as our input string. Must be a valid path. Can be relative or absolute. If not provided then standard input is assumed.")
+	readFlags.StringVar(&_opts.TargetOutPath, "o", "", "Path to the file to write the converted string to. If not provided then standard input is assumed. Must be a valid path. Can be relative or absolute. Sent to Standard Out if not specified")
+	addStandardOptions(readFlags)
+
+	if len(os.Args) < 2 {
+		fmt.Println("Expected a subcommand of 'exec', or 'read")
+		os.Exit(1)
+	}
+
+	_opts.Type = os.Args[1]
+	switch _opts.Type {
+	case TYPE_EXEC:
+		execFlags.Parse(os.Args[2:])
+		_opts.Globs = execFlags.Args()
+	case TYPE_READ:
+		readFlags.Parse(os.Args[2:])
+		_opts.Globs = readFlags.Args()
+	default:
+		fmt.Printf("Unknown subcommand '%s'. Expecting '%s', or '%s", _opts.Type, TYPE_EXEC, TYPE_READ)
+		os.Exit(1)
+	}
+}
+
+func addStandardOptions(targetFlag *flag.FlagSet) {
+	targetFlag.BoolVar(&_opts.UseStdOut, "useStdOut", true, "True if you want Standard Output to be shown in this terminal")
+	targetFlag.BoolVar(&_opts.UseStdErr, "useStdErr", true, "True if you want Standard Error to be shown in this terminal")
+	targetFlag.BoolVar(&_opts.DoLogDebug, "debug.main", false, "True if you want most debug info displayed")
+	targetFlag.BoolVar(&_opts.DoLogEnv, "debug.env", false, "True if you want to log all Environment data")
+	targetFlag.BoolVar(&_opts.IsTest, "test", false, "True if you want to only show what would be done and exit")
 }
 
 func main() {
+	switch _opts.Type {
+	case TYPE_EXEC:
+		executeCmd()
+	case TYPE_READ:
+		readEnv()
+	}
+}
+func readEnv() {
+	fmt.Println("Read operation is not yet implemented")
+	os.Exit(1)
+}
+func executeCmd() {
 	// Verify the target command appears valid.
 	targetCmd, err := exec.LookPath(_opts.CommandPath)
 	if err != nil { // errors.Is(err, os.ErrNotExist) {
@@ -208,6 +271,8 @@ func (i *CommandArguments) Set(value string) error {
 
 // Tracks information on what Operation should be performed
 type OperationOptions struct {
+	// Type of Operation this is for
+	Type string
 	// Globs that describe the Environment files to process
 	Globs []string
 	// Paths to the actual Environment files to process
@@ -219,6 +284,13 @@ type OperationOptions struct {
 	CommandArgsRaw CommandArguments
 	// Final processed arguments that will be passed to the command
 	CommandArgs []string
+
+	// Path to a file to read in and process for Environment Variables.
+	TargetInPath string
+	// Path where the updated version of TargetInPath should be written.
+	TargetOutPath string
+
+	//TODO: Track the Input and Output streams to use. May allow removing some other args?
 
 	// Is this just a test run?
 	// If true then the operation requested won't be performed, but all elements of it will be logged as if it were
