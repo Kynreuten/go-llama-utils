@@ -3,8 +3,8 @@ Go Language Utilities. Mostly for my learning, it's possible some will be practi
 
 
 
-# Using Caller on a Mac
+# Using glenv to execute LogStash on a Mac
 You must put your `logstash.conf` file into LogStash's `./config/` folder for this to work. It seems to ignore absolute paths?! I have no idea why the two layers of ../ are required. Only one and it sees a space in the config path still...
 ```
-/path/to/go/bin/caller --debug.main --cmd /path/to/logstash-8.4.2/bin/logstash --cmdArg f=../../config/my.conf /path/to/my.mac.env /path/to/my.local.env
+/path/to/go/bin/glenv exec --debug.main --cmd /path/to/logstash-8.4.2/bin/logstash --cmdArg f=../../config/my.conf /path/to/my.mac.env /path/to/my.local.env
 ```
