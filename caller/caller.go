@@ -192,29 +192,45 @@ func processCommandArgs(opts *OperationOptions) error {
 // 	cmd.Env = os.Environ()
 // }
 
+// Wrapper type for a string array. Allows for an array of arguments with the same name
 type CommandArguments []string
 
+// Put together the CommandArguments into a single string
 func (i *CommandArguments) String() string {
 	return strings.Join(*i, ", ")
 }
+
+// Build up the command arguments
 func (i *CommandArguments) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
 
+// Tracks information on what Operation should be performed
 type OperationOptions struct {
-	Globs    []string
+	// Globs that describe the Environment files to process
+	Globs []string
+	// Paths to the actual Environment files to process
 	EnvPaths []string
 
-	CommandPath    string
+	// Path to the command to execute
+	CommandPath string
+	// Raw arguments for the command that were passed in
 	CommandArgsRaw CommandArguments
-	CommandArgs    []string
+	// Final processed arguments that will be passed to the command
+	CommandArgs []string
 
-	IsTest     bool
+	// Is this just a test run?
+	// If true then the operation requested won't be performed, but all elements of it will be logged as if it were
+	IsTest bool
+	// Should detailed logging information be provided everywhere possible?
 	DoLogDebug bool
-	DoLogEnv   bool
-	UseStdOut  bool
-	UseStdErr  bool
+	// Should the processing of Environment variables be logged?
+	DoLogEnv bool
+	// Should the calling shell's Standard Out be used as Standard Out for the called process?
+	UseStdOut bool
+	// Should the calling shell's Standard Error be used as Standard Error for the called process?
+	UseStdErr bool
 }
 
 func CreateDefaultOperationOptions() OperationOptions {
