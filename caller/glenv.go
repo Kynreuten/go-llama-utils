@@ -93,38 +93,26 @@ func main() {
 	case TYPE_EXEC:
 		executeCmd()
 	case TYPE_READ:
-		readEnv()
+		transform()
 	}
 }
-func readEnv() {
-	fmt.Println("Read operation is not yet implemented")
+
+// Attempts to use any given environment information to transform the given data
+func transform() {
 	os.Exit(1)
 }
-func executeCmd() {
-	// Verify the target command appears valid.
-	targetCmd, err := exec.LookPath(_opts.CommandPath)
-	if err != nil { // errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("Failure looking at command: \"%s\"\n%s", targetCmd, err.Error())
-	}
-	if err := processEnvGlobs(&_opts); err != nil {
-		log.Fatal(err.Error())
-	}
-	if err := processCommandArgs(&_opts); err != nil {
-		log.Fatal(err.Error())
-	}
 
-	fmt.Println("Passed Command: ", targetCmd)
-	if _opts.DoLogDebug {
-		fmt.Println("Command Arguments: ")
-		fmt.Println(_opts.CommandArgs)
+// Attempts to read and process environment variables in the files referenced in _opts.EnvPaths
+// Returns a pointer to a map of environment variable keys to values as strings that were read in.
+func readEnv() (*map[string]string, error) {
+
+	if err := processEnvGlobs(&_opts); err != nil {
+		return nil, err
 	}
 	if _opts.DoLogDebug {
 		fmt.Println("Env Paths: ")
 		fmt.Println(_opts.EnvPaths)
 	}
-
-	// Start making the actual command to run. We assume that all text before a space is the path to the command. Anything else is space-delimited arguments for it
-	cmd := exec.Command(targetCmd, _opts.CommandArgs...)
 
 	// Environment variables that have been completely processed
 	envProcessed := make(map[string]string)
@@ -137,18 +125,72 @@ func executeCmd() {
 		}
 	}
 
-	cmd.Env = make([]string, len(envProcessed))
+	envEntries := make([]string, len(envProcessed))
 	fmt.Println("Environment:")
 	if len(envProcessed) > 0 {
 		i := 0
 		for k, v := range envProcessed {
-			cmd.Env[i] = fmt.Sprintf("%s=%s", k, v)
-			fmt.Printf("`%s`\n", cmd.Env[i])
+			envEntries[i] = fmt.Sprintf("%s=%s", k, v)
+			fmt.Printf("`%s`\n", envEntries[i])
 			i++
 		}
 	} else {
-		fmt.Println("No Environment variables found")
+		return nil, errors.New("no environment variables found")
 	}
+
+	return &envProcessed, nil
+}
+
+// Puts together a list of the given envProcessed entries. If doPrint is true then these will be printed out while assembling the array of values
+// Returns a pointer to an array of all entries from envProcessed
+func listEnv(envProcessed map[string]string, doPrint bool) (*[]string, error) {
+
+	envEntries := make([]string, len(envProcessed))
+	if doPrint {
+		fmt.Println("Environment:")
+	}
+	if len(envProcessed) > 0 {
+		i := 0
+		for k, v := range envProcessed {
+			envEntries[i] = fmt.Sprintf("%s=%s", k, v)
+			if doPrint {
+				fmt.Printf("`%s`\n", envEntries[i])
+			}
+			i++
+		}
+		return &envEntries, nil
+	} else {
+		return nil, errors.New("no environment variables found")
+	}
+}
+
+// Attempts to execute the command that was given via program arguments
+func executeCmd() {
+	// Verify the target command appears valid.
+	targetCmd, err := exec.LookPath(_opts.CommandPath)
+	if err != nil { // errors.Is(err, os.ErrNotExist) {
+		log.Fatalf("Failure looking at command: \"%s\"\n%s", targetCmd, err.Error())
+	}
+	if err := processCommandArgs(&_opts); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Println("Passed Command: ", targetCmd)
+	if _opts.DoLogDebug {
+		fmt.Println("Command Arguments: ")
+		fmt.Println(_opts.CommandArgs)
+	}
+
+	// Environment variables that have been completely processed
+	var envProcessed, readErr = readEnv()
+	if readErr != nil {
+		log.Fatal(readErr)
+	}
+
+	// Start making the actual command to run. We assume that all text before a space is the path to the command. Anything else is space-delimited arguments for it
+	cmd := exec.Command(targetCmd, _opts.CommandArgs...)
+
+	listEnv(*envProcessed, _opts.DoLogEnv)
 
 	//TODO: Support alternative places to put it? Maybe to a file?
 	if _opts.UseStdOut {
