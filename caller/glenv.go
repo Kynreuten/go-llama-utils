@@ -66,13 +66,16 @@ func init() {
 	_opts.Type = os.Args[1]
 	switch _opts.Type {
 	case TYPE_EXEC:
+		fmt.Println("Exec Subcommand chosen.")
 		execFlags.Parse(os.Args[2:])
 		_opts.Globs = execFlags.Args()
 	case TYPE_READ:
+		fmt.Println("Read Subcommand chosen.")
 		readFlags.Parse(os.Args[2:])
 		_opts.Globs = readFlags.Args()
 	default:
 		fmt.Printf("Unknown subcommand '%s'. Expecting '%s', or '%s", _opts.Type, TYPE_EXEC, TYPE_READ)
+		fmt.Println(os.Args)
 		os.Exit(1)
 	}
 }
@@ -223,7 +226,7 @@ func processEnvGlobs(opts *OperationOptions) error {
 
 func processCommandArgs(opts *OperationOptions) error {
 	opts.CommandArgs = make([]string, len(opts.CommandArgsRaw))
-	rEntry := regexp.MustCompile(`^([A-Za-z]{1}[A-Za-z0-9_\-\.]*)(?:[=:]{1}([^\r\n]+))?$`)
+	rEntry := regexp.MustCompile(`^(?:([A-Za-z]{1}[A-Za-z0-9_\-\.]*)[=:]?)?([^\r\n]+)?$`)
 
 	for i, a := range opts.CommandArgsRaw {
 		curr := rEntry.FindStringSubmatch(a)
@@ -241,7 +244,7 @@ func processCommandArgs(opts *OperationOptions) error {
 		} else if len(curr) == 2 {
 			opts.CommandArgs[i] = fmt.Sprintf("-%s", curr[1])
 		} else {
-			return fmt.Errorf("invalid command argument was supplied: \n%s", a)
+			return fmt.Errorf("invalid command argument was supplied (#%d): \n%s\nExtra?%s", len(curr), a, curr)
 		}
 	}
 
