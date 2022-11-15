@@ -15,7 +15,7 @@
                 "-debug.main", 
                 "-cmd", "/Users/christophergolden/bin/logstash-8.4.2/bin/logstash",
                 "-a", "f=../../config/orders",
-                "-a", "log.level=debug",
+                "-a", "debug",
                 // "-a", "config.debug",
                 "-a", "t",
                 // Environment variable files
