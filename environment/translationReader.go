@@ -28,15 +28,18 @@ func NewTranslator(envLookup *map[string]string, r io.Reader) (translator *Envir
 	return translator
 }
 
-func (etr *EnvironmentTranslationReader) ReadFromScanner(p []byte) (n int, err error) {
+func (etr *EnvironmentTranslationReader) readFromScanner(p []byte) (n int, err error) {
 	if !etr.isScanReady {
 		return 0, errors.New("must be initialized")
 	}
 
-	var scanDone bool = false
-	for !scanDone && etr.buffOut.Len() < len(p) {
+	var hasMore bool = true
+	for hasMore && etr.buffOut.Len() < len(p) {
 		// Scan for the next line of data
-		if scanDone = etr.tokenScanner.Scan(); scanDone && etr.tokenScanner.Err() != nil {
+		hasMore = etr.tokenScanner.Scan()
+
+		//NOTE: May have read some bytes. We're not going to use them if there's a non-EOF error however?
+		if !hasMore && etr.tokenScanner.Err() != nil {
 			return 0, etr.tokenScanner.Err()
 		}
 
@@ -55,5 +58,5 @@ func (etr *EnvironmentTranslationReader) ReadFromScanner(p []byte) (n int, err e
 }
 
 func (etr *EnvironmentTranslationReader) Read(p []byte) (n int, err error) {
-	return etr.ReadFromScanner(p)
+	return etr.readFromScanner(p)
 }
