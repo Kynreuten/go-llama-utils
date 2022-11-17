@@ -2,6 +2,7 @@ package environment
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -70,13 +71,13 @@ func ProcessEnvironmentFile(path string, envProcessed *map[string]string, doPrin
 // ExpandVarString replaces sections of varString that are formatted like environment variables with any matching entries in the given lookup.
 // Lookup's keys are expected to be the variable's name, the matching value is what the variable will be replaced with.
 // Returns the updated string, whether any replacements were made and an array of variable names that were in varString but don't have values provided in lookup.
-func ExpandVarString(varString string, lookup *map[string]string) (string, bool, []string) {
+func ExpandVarString(varString string, lookup *map[string]string) (replaced string, allTranslated bool, neededKeys []string) {
 	// rVars := regexp.MustCompile(`\$\{([\w-]+)\}|\$([\w-]+)`)
 	rVars := regexp.MustCompile(`\$\{([A-Za-z]{1}[A-Za-z0-9_-]+)\}|\$([A-Za-z]{1}[A-Za-z0-9_-]+)`)
-	neededKeys := []string{}
+	neededKeys = []string{}
 
 	missCount := 0
-	replaced := rVars.ReplaceAllStringFunc(varString, func(s string) string {
+	replaced = rVars.ReplaceAllStringFunc(varString, func(s string) string {
 		subs := rVars.FindStringSubmatch(s)
 		// k := len(subs[1]) > 0 ? subs[1] : subs[2]
 		k := subs[1]
@@ -93,6 +94,21 @@ func ExpandVarString(varString string, lookup *map[string]string) (string, bool,
 	})
 
 	return replaced, missCount == 0, neededKeys
+}
+
+func FindEndingPartialIndex(target string) (indexOfPartial int, err error) {
+
+	trailFindExpr := regexp.MustCompile(`\$\{?([A-Za-z]{1}[A-Za-z0-9_-]*)?$`)
+
+	if idxes := trailFindExpr.FindStringSubmatchIndex(target); len(idxes) > 0 {
+		if len(idxes) > 1 {
+			return -1, errors.New("more than one match not possible. regex broken?")
+		}
+
+		return idxes[0], nil
+	}
+
+	return -1, nil
 }
 
 // Cleans up a string that looks like an environment variable.
