@@ -10,6 +10,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -91,15 +92,41 @@ func addStandardOptions(targetFlag *flag.FlagSet) {
 func main() {
 	switch _opts.Type {
 	case TYPE_EXEC:
-		executeCmd()
+		executeCmdAction()
 	case TYPE_READ:
-		transform()
+		transformAction()
 	}
 }
 
 // Attempts to use any given environment information to transform the given data
-func transform() {
-	os.Exit(1)
+func transformAction() {
+	var processEnv, envErr = readEnv()
+	if envErr != nil {
+		log.Fatal(envErr)
+	}
+
+	//TODO: Open reader to input file
+	var fIn, fReadErr = os.Open(_opts.TargetInPath)
+	if fReadErr != nil {
+		log.Fatal(fReadErr)
+	}
+
+	//TODO: Transform?!
+
+	//TODO: Open writer to output file
+	var fOut, fWriteErr = os.Open(_opts.TargetOutPath)
+	if fWriteErr != nil {
+		log.Fatal(fWriteErr)
+	}
+
+	//TODO: Read through the file, transforming each section. How to break into reasonable sections?
+	if err := transform(processEnv, fIn, fOut); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func transform(env *map[string]string, r io.Reader, w io.Writer) error {
+
 }
 
 // Attempts to read and process environment variables in the files referenced in _opts.EnvPaths
@@ -165,7 +192,7 @@ func listEnv(envProcessed map[string]string, doPrint bool) (*[]string, error) {
 }
 
 // Attempts to execute the command that was given via program arguments
-func executeCmd() {
+func executeCmdAction() {
 	// Verify the target command appears valid.
 	targetCmd, err := exec.LookPath(_opts.CommandPath)
 	if err != nil { // errors.Is(err, os.ErrNotExist) {
@@ -332,8 +359,12 @@ type OperationOptions struct {
 
 	// Path to a file to read in and process for Environment Variables.
 	TargetInPath string
+	// Reader to read in data to transform
+	TargetInReader io.Reader
 	// Path where the updated version of TargetInPath should be written.
 	TargetOutPath string
+	// Writer to write transformed data to
+	TargetOutWriter io.Writer
 
 	//TODO: Track the Input and Output streams to use. May allow removing some other args?
 
