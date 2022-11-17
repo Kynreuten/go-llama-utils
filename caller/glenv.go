@@ -108,10 +108,12 @@ func transformAction() {
 		if fIn, err := os.Open(_opts.TargetInPath); err != nil {
 			log.Fatal(err)
 		} else {
+			defer fIn.Close()
 			// Open writer to output file
 			if fOut, err := os.Open(_opts.TargetOutPath); err != nil {
 				log.Fatal(err)
 			} else {
+				defer fOut.Close()
 				// Prep our translator
 				tr := environment.NewTranslator(processEnv, fIn)
 
