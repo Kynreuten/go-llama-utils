@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -105,28 +106,24 @@ func transformAction() {
 		log.Fatal(envErr)
 	}
 
-	//TODO: Open reader to input file
+	// Open reader to input file
 	var fIn, fReadErr = os.Open(_opts.TargetInPath)
 	if fReadErr != nil {
 		log.Fatal(fReadErr)
 	}
 
-	//TODO: Transform?!
+	tr := environment.EnvironmentTranslationReader{}
+	tr.Initialize(processEnv, fIn)
 
-	//TODO: Open writer to output file
+	// Open writer to output file
 	var fOut, fWriteErr = os.Open(_opts.TargetOutPath)
 	if fWriteErr != nil {
 		log.Fatal(fWriteErr)
 	}
-
-	//TODO: Read through the file, transforming each section. How to break into reasonable sections?
-	if err := transform(processEnv, fIn, fOut); err != nil {
-		log.Fatal(err)
+	bfOut := bufio.NewWriter(fOut)
+	if _, writeErr := bfOut.ReadFrom(&tr); writeErr != nil {
+		log.Fatal(writeErr)
 	}
-}
-
-func transform(env *map[string]string, r io.Reader, w io.Writer) error {
-
 }
 
 // Attempts to read and process environment variables in the files referenced in _opts.EnvPaths
