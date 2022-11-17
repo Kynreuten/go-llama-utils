@@ -18,12 +18,14 @@ type EnvironmentTranslationReader struct {
 	buffOut bytes.Buffer
 }
 
-func (etr *EnvironmentTranslationReader) Initialize(envLookup *map[string]string, r io.Reader) {
-	etr.env = envLookup
-	etr.reader = bufio.NewReader(r)
-	etr.tokenScanner = *bufio.NewScanner(etr.reader)
+func NewTranslator(envLookup *map[string]string, r io.Reader) (translator *EnvironmentTranslationReader) {
+	translator = &EnvironmentTranslationReader{}
+	translator.env = envLookup
+	translator.reader = bufio.NewReader(r)
+	translator.tokenScanner = *bufio.NewScanner(translator.reader)
 
-	etr.isScanReady = true
+	translator.isScanReady = true
+	return translator
 }
 
 func (etr *EnvironmentTranslationReader) ReadFromScanner(p []byte) (n int, err error) {

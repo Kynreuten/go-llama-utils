@@ -108,16 +108,15 @@ func transformAction() {
 		if fIn, err := os.Open(_opts.TargetInPath); err != nil {
 			log.Fatal(err)
 		} else {
-			// Prep our translator
-			tr := environment.EnvironmentTranslationReader{}
-			tr.Initialize(processEnv, fIn)
-
 			// Open writer to output file
 			if fOut, err := os.Open(_opts.TargetOutPath); err != nil {
 				log.Fatal(err)
 			} else {
+				// Prep our translator
+				tr := environment.NewTranslator(processEnv, fIn)
+
 				bfOut := bufio.NewWriter(fOut)
-				if _, err := bfOut.ReadFrom(&tr); err != nil {
+				if _, err := bfOut.ReadFrom(tr); err != nil {
 					log.Fatal(err)
 				}
 			}
