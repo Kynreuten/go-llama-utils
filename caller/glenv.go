@@ -101,28 +101,27 @@ func main() {
 
 // Attempts to use any given environment information to transform the given data
 func transformAction() {
-	var processEnv, envErr = readEnv()
-	if envErr != nil {
-		log.Fatal(envErr)
-	}
+	if processEnv, err := readEnv(); err != nil {
+		log.Fatal(err)
+	} else {
+		// Open reader to input file
+		if fIn, err := os.Open(_opts.TargetInPath); err != nil {
+			log.Fatal(err)
+		} else {
+			// Prep our translator
+			tr := environment.EnvironmentTranslationReader{}
+			tr.Initialize(processEnv, fIn)
 
-	// Open reader to input file
-	var fIn, fReadErr = os.Open(_opts.TargetInPath)
-	if fReadErr != nil {
-		log.Fatal(fReadErr)
-	}
-
-	tr := environment.EnvironmentTranslationReader{}
-	tr.Initialize(processEnv, fIn)
-
-	// Open writer to output file
-	var fOut, fWriteErr = os.Open(_opts.TargetOutPath)
-	if fWriteErr != nil {
-		log.Fatal(fWriteErr)
-	}
-	bfOut := bufio.NewWriter(fOut)
-	if _, writeErr := bfOut.ReadFrom(&tr); writeErr != nil {
-		log.Fatal(writeErr)
+			// Open writer to output file
+			if fOut, err := os.Open(_opts.TargetOutPath); err != nil {
+				log.Fatal(err)
+			} else {
+				bfOut := bufio.NewWriter(fOut)
+				if _, err := bfOut.ReadFrom(&tr); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
 	}
 }
 
