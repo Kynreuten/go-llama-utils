@@ -142,7 +142,7 @@ func ReadVariables(rIn io.Reader) (envVars []EnvVariable, err error) {
 		if len(matches) == 3 {
 			envVars = append(envVars, EnvVariable{Name: matches[1], Value: matches[2]})
 		} else if len(matches) > 1 {
-			return envVars, fmt.Errorf("unexpected matches ", len(matches))
+			return envVars, fmt.Errorf("unexpected matches %d", len(matches))
 		}
 	}
 
