@@ -65,3 +65,43 @@ Here we should be looking for similar values, but with no surrounding quotes. No
 
 
 ##TODO: Handle single quoted values
+
+
+
+
+# Trying to upgrade ENV variable reading regex
+
+### Capture variable name:	
+`[A-Za-z][\w-]*`
+### Capture escaped \ or $:	
+`(?:\\\")*(?:\\\$)*`
+### Capture variable with {}
+`\$\{?[A-Za-z][\w-]*\}?`
+
+### Variables
+**With brackets**
+`(\$\{[A-Za-z][\w-]*\})*`
+**No brackets**
+`(\$[A-Za-z][\w-]*)*`
+
+### Non variable section
+`[^\r\n\$\"]*`
+
+### Capture quoted values
+`\"(<nonvar>*<var>*)+\"`
+
+**Fully spelled out - No escaped**
+`\"(?:([^\r\n\$\"]*)*(\$\{[A-Za-z][\w-]*\})*(\$[A-Za-z][\w-]*)*)+\"`
+**Fully spelled out - Escaped**
+`\"(?:(?:\\\")*(?:\\\$)*([^\r\n\$\"]*)*(\$\{[A-Za-z][\w-]*\})*(\$[A-Za-z][\w-]*)*)+\"`
+
+## Maybe fully working?
+```
+^[ \t]*(?:export)?[ \t]*([A-Za-z][\w-]*)=\"?((?:\\\")*(?:\\\$)*([^\r\n\$\"]*)*((?:\$\{[A-Za-z][\w-]*\})|(?:\$[A-Za-z][\w-]*))*)+\"?$
+```
+
+
+```
+^[ \t]*(?:export)?[ \t]*([A-Za-z][\w-]*)=((?:\"?(?:[^\r\n\$\"]*(?:\$\{?[A-Z][\w-]*\}?)*)+\"?)|(?:[\.\w\-:\/\\]*(?:\${[A-Z][\w-]*\})*)+){1}
+(?:[\.\w\-:\/\\]*(?:\${[A-Z][\w-]*\})*)+){1}$\$\{?([A-Za-z]{1}[A-Za-z0-9_-]*)?
+```

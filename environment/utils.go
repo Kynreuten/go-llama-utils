@@ -130,7 +130,7 @@ func CleanVarValue(varValue string) string {
 
 // NOTE: Named groups for expanding strings...
 // const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]?(?P<key>[A-Z]+[A-Z0-9-_]+)=(?P<value>(?:\"?(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*)\"?)|(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*))$`
-const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]*([A-Z][\w-]*)=((?:\"?(?:[^\r\n\$\"]*(?:\$\{?[A-Z][\w-]*\}?)*)+\"?)|(?:[\.\w\-:\/\\]*(?:\${[A-Z][\w-]*\})*)+){1}$`
+const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]*([A-Za-z][\w-]*)=\"?((?:\\\")*(?:\\\$)*(?:[^\r\n\$\"]*)*(?:(?:\$\{[A-Za-z][\w-]*\})?|(?:\$[A-Za-z][\w-]*)?)*)+\"?$`
 
 func ReadVariables(rIn io.Reader) (envVars []EnvVariable, err error) {
 	envVars = make([]EnvVariable, 0, 10)
