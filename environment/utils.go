@@ -14,7 +14,7 @@ import (
 // Each variable found is added to or updated with the latest version in envProcessed.
 // Values that contain a known Environment variable will be expanded to contain the variable's value.
 // If doPrint == true then detailed debugging information will be printed through the process of reading envData.
-func ProcessEnvironmentFile(path string, envProcessed *map[string]string, doPrint bool) {
+func ProcessEnvironmentFile(path string, envProcessed *VariableMap, doPrint bool) {
 	file, err := os.Open(path)
 	check(err)
 	defer file.Close()
@@ -26,7 +26,7 @@ func ProcessEnvironmentFile(path string, envProcessed *map[string]string, doPrin
 // Each variable found is added to or updated with the latest version in envProcessed.
 // Values that contain a known Environment variable will be expanded to contain the variable's value.
 // If doPrint == true then detailed debugging information will be printed through the process of reading envData.
-func ProcessEnvironment(r io.Reader, envProcessed *map[string]string, doPrint bool) (err error) {
+func ProcessEnvironment(r io.Reader, envProcessed *VariableMap, doPrint bool) (err error) {
 	rVars := regexp.MustCompile(`\$\{?([\w-]+)\}?`)
 
 	if fileEntries, err := ReadVariables(r); err != nil {
@@ -82,7 +82,7 @@ func ProcessEnvironment(r io.Reader, envProcessed *map[string]string, doPrint bo
 // ExpandVarString replaces sections of varString that are formatted like environment variables with any matching entries in the given lookup.
 // Lookup's keys are expected to be the variable's name, the matching value is what the variable will be replaced with.
 // Returns the updated string, whether any replacements were made and an array of variable names that were in varString but don't have values provided in lookup.
-func ExpandVarString(varString string, lookup *map[string]string) (replaced string, allTranslated bool, neededKeys []string) {
+func ExpandVarString(varString string, lookup *VariableMap) (replaced string, allTranslated bool, neededKeys []string) {
 	// rVars := regexp.MustCompile(`\$\{([\w-]+)\}|\$([\w-]+)`)
 	rVars := regexp.MustCompile(`\$\{([A-Za-z]{1}[A-Za-z0-9_-]+)\}|\$([A-Za-z]{1}[A-Za-z0-9_-]+)`)
 	neededKeys = []string{}
@@ -132,15 +132,15 @@ func CleanVarValue(varValue string) string {
 // const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]?(?P<key>[A-Z]+[A-Z0-9-_]+)=(?P<value>(?:\"?(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*)\"?)|(?:(?:[\.\w\-:\/\\]*(?:\${[\w-]*\})*)*))$`
 const ENV_LINE_REGEX string = `^[ \t]*(?:export)?[ \t]*([A-Za-z][\w-]*)=\"?((?:\\\")*(?:\\\$)*(?:[^\r\n\$\"]*)*(?:(?:\$\{[A-Za-z][\w-]*\})?|(?:\$[A-Za-z][\w-]*)?)*)+\"?$`
 
-func ReadVariables(rIn io.Reader) (envVars []EnvVariable, err error) {
-	envVars = make([]EnvVariable, 0, 10)
+func ReadVariables(rIn io.Reader) (envVars Variables, err error) {
+	envVars = make([]Variable, 0, 10)
 
 	scanner := bufio.NewScanner(rIn)
 	r := regexp.MustCompile(ENV_LINE_REGEX)
 	for scanner.Scan() {
 		matches := r.FindStringSubmatch(scanner.Text())
 		if len(matches) == 3 {
-			envVars = append(envVars, EnvVariable{Name: matches[1], Value: matches[2]})
+			envVars = append(envVars, Variable{Name: matches[1], Value: matches[2]})
 		} else if len(matches) > 1 {
 			return envVars, fmt.Errorf("unexpected matches %d", len(matches))
 		}
@@ -157,7 +157,7 @@ func ReadVariables(rIn io.Reader) (envVars []EnvVariable, err error) {
 // path is the path to a file to read enviroment variables from. May be relative or absolute.
 // Returns an array of EnvVariable instances. Each representing a Key/value pair of a variable and its value that were found in the file at path.
 // If doPrint == true then detailed debugging information will be printed through the process of reading the file.
-func ReadVariablesFromFile(path string, doPrint bool) (envVars []EnvVariable) {
+func ReadVariablesFromFile(path string, doPrint bool) (envVars Variables) {
 	if doPrint {
 		fmt.Println("Reading file: ", path)
 	}

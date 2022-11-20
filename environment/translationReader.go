@@ -9,7 +9,7 @@ import (
 )
 
 type EnvironmentTranslationReader struct {
-	env    *map[string]string
+	env    *VariableMap
 	reader io.Reader
 
 	tokenScanner bufio.Scanner
@@ -18,7 +18,7 @@ type EnvironmentTranslationReader struct {
 	buffOut bytes.Buffer
 }
 
-func NewTranslator(envLookup *map[string]string, r io.Reader) (translator *EnvironmentTranslationReader) {
+func NewTranslator(envLookup *VariableMap, r io.Reader) (translator *EnvironmentTranslationReader) {
 	translator = &EnvironmentTranslationReader{}
 	translator.env = envLookup
 	translator.reader = bufio.NewReader(r)

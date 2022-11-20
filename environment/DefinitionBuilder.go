@@ -20,14 +20,14 @@ type DefinitionBuilder struct {
 	// String to put between the name and value on each line. Normally '='
 	NameToValueConnector string
 
-	// Operation to run against each environment variable name when writing it.
+	// Operation to run against each environment variable when writing its Name.
 	// Should return the final name to use.
-	NameHandler func(name string, val string) string
-	// Operation to run against each environment variable value when writing it.
+	NameHandler func(enVar Variable) string
+	// Operation to run against each environment variable when writing its Value.
 	// Should return the final value to use.
 	// Often used to wrap with quotes or similar.
 	// See the provided ValueHandlerDoubleQuoted and ValueHandlerSingleQuoted functions
-	ValueHandler func(name string, val string) string
+	ValueHandler func(enVar Variable) string
 }
 
 // Creates a default DefinitionBuilder instance to create a normal .env file format
@@ -42,15 +42,9 @@ func NewDefinitionBuilder() *DefinitionBuilder {
 	}
 }
 
-// Simple Key/Value element for tracking Environment Variables
-type EnvVariable struct {
-	Name  string
-	Value string
-}
-
 // Puts together a single string representing all of the entries in input
 // Returns the full string with a single newline between each entry
-func (opts *DefinitionBuilder) BuildString(input []EnvVariable) (str string) {
+func (opts *DefinitionBuilder) BuildString(input Variables) (str string) {
 	sb := strings.Builder{}
 	for _, kv := range input {
 		if len(opts.Prefix) > 0 {
@@ -60,9 +54,9 @@ func (opts *DefinitionBuilder) BuildString(input []EnvVariable) (str string) {
 				sb.WriteString(opts.PrefixToNameFiller)
 			}
 		}
-		sb.WriteString(opts.NameHandler(kv.Name, kv.Value))
+		sb.WriteString(opts.NameHandler(kv))
 		sb.WriteString(opts.NameToValueConnector)
-		sb.WriteString(opts.ValueHandler(kv.Name, kv.Value))
+		sb.WriteString(opts.ValueHandler(kv))
 		sb.WriteRune('\n')
 	}
 	return sb.String()
@@ -71,24 +65,24 @@ func (opts *DefinitionBuilder) BuildString(input []EnvVariable) (str string) {
 // Simple function that returns string n that was given to it.
 func StringNoOp(n string) string { return n }
 
-func NameHandlerAsIs(name string, val string) string {
-	return name
+func NameHandlerAsIs(enVar Variable) string {
+	return enVar.Name
 }
-func ValueHandlerAsIs(name string, val string) string {
-	return val
+func ValueHandlerAsIs(enVar Variable) string {
+	return enVar.Value
 }
 
-func NameHandlerDoubleQuoted(name string, val string) string {
-	return WrapString(val, "\"")
+func NameHandlerDoubleQuoted(enVar Variable) string {
+	return WrapString(enVar.Name, "\"")
 }
-func ValueHandlerDoubleQuoted(name string, val string) string {
-	return WrapString(val, "\"")
+func ValueHandlerDoubleQuoted(enVar Variable) string {
+	return WrapString(enVar.Value, "\"")
 }
-func NameHandlerSingleQuoted(name string, val string) string {
-	return WrapString(val, "'")
+func NameHandlerSingleQuoted(enVar Variable) string {
+	return WrapString(enVar.Name, "'")
 }
-func ValueHandlerSingleQuoted(name string, val string) string {
-	return WrapString(val, "'")
+func ValueHandlerSingleQuoted(enVar Variable) string {
+	return WrapString(enVar.Value, "'")
 }
 
 func WrapString(str string, wrapper string) string {

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func checkNamesAndValues(t *testing.T, expectedKeys []EnvVariable, envString string) {
+func checkNamesAndValues(t *testing.T, expectedKeys Variables, envString string) {
 	inputReader := strings.NewReader(envString)
 	if entries, err := ReadVariables(inputReader); err != nil {
 		t.Fail()
@@ -29,7 +29,7 @@ func checkNamesAndValues(t *testing.T, expectedKeys []EnvVariable, envString str
 }
 
 func TestReadEnvironmentMultipleNoQuotes(t *testing.T) {
-	expectedKeys := []EnvVariable{
+	expectedKeys := Variables{
 		{"VAR01", "standard"},
 		{"VAR02", "slight-variation_with+stuff^\\&@#%()_in~it"},
 		{"VAR03", "/noexport/absolute-path"},
