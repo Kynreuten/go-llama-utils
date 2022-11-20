@@ -40,9 +40,9 @@ func TestReadEnvironmentMultipleNoQuotes(t *testing.T) {
 	}
 
 	// Default assembly
-	opts := NewEnvFileBuilderOptions()
+	opts := NewDefinitionBuilder()
 
-	checkNamesAndValues(t, expectedKeys, BuildEnvFileString(expectedKeys, *opts))
+	checkNamesAndValues(t, expectedKeys, opts.BuildString(expectedKeys))
 }
 
 func TestReadEnvironmentSingleNoVars(t *testing.T) {
