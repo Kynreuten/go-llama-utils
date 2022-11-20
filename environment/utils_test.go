@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func checkNamesAndValues(t *testing.T, expectedKeys [][]string, envString string) {
+func checkNamesAndValues(t *testing.T, expectedKeys []EnvVariable, envString string) {
 	inputReader := strings.NewReader(envString)
 	if entries, err := ReadVariables(inputReader); err != nil {
 		t.Fail()
@@ -14,8 +14,8 @@ func checkNamesAndValues(t *testing.T, expectedKeys [][]string, envString string
 			t.Fatalf("incorrect number of entries. want %d, got %d", len(expectedKeys), len(entries))
 		}
 		for i, s := range expectedKeys {
-			wantName := s[0]
-			wantValue := s[1]
+			wantName := s.Name
+			wantValue := s.Value
 			gotName := entries[i].Name
 			gotValue := entries[i].Value
 			if wantName != entries[i].Name {
@@ -29,7 +29,7 @@ func checkNamesAndValues(t *testing.T, expectedKeys [][]string, envString string
 }
 
 func TestReadEnvironmentMultipleNoQuotes(t *testing.T) {
-	expectedKeys := [][]string{
+	expectedKeys := []EnvVariable{
 		{"VAR01", "standard"},
 		{"VAR02", "slight-variation_with+stuff^\\&@#%()_in~it"},
 		{"VAR03", "/noexport/absolute-path"},
@@ -38,15 +38,11 @@ func TestReadEnvironmentMultipleNoQuotes(t *testing.T) {
 		{"VAR06", "./globs/**/path/*.env"},
 		{"VAR07", "escaped\\$variablestart"},
 	}
-	envString := `export VAR01=standard
-	export VAR02=slight-variation_with+stuff^\&@#%()_in~it
-	export VAR03=/noexport/absolute-path
-	export VAR04=../relative-path
-	export VAR05=./local-path
-	export VAR06=./globs/**/path/*.env
-	export VAR07=escaped\$variablestart`
 
-	checkNamesAndValues(t, expectedKeys, envString)
+	// Default assembly
+	opts := NewEnvFileBuilderOptions()
+
+	checkNamesAndValues(t, expectedKeys, BuildEnvFileString(expectedKeys, *opts))
 }
 
 func TestReadEnvironmentSingleNoVars(t *testing.T) {

@@ -177,12 +177,6 @@ func check(e error) {
 	}
 }
 
-// Simple Key/Value element for tracking Environment Variables
-type EnvVariable struct {
-	Name  string
-	Value string
-}
-
 /*
 go mod edit -replace github.com/Kynreuten/go-llama-utils/environment=../environment
 go mod tidy
